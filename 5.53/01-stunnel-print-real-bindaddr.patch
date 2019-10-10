@@ -1,0 +1,32 @@
+--- stunnel-5.53/src/stunnel.c	2019-04-05 04:08:23.000000000 +0800
++++ stunnel-5.53-new/src/stunnel.c	2019-04-18 12:19:16.082351453 +0800
+@@ -541,6 +541,8 @@
+ NOEXPORT SOCKET bind_port(SERVICE_OPTIONS *opt, int listening_section, unsigned i) {
+     SOCKET fd;
+     SOCKADDR_UNION *addr=opt->local_addr.addr+i;
++    SOCKADDR_UNION addr_real;
++    socklen_t addr_real_len;
+     char *local_address;
+ #ifdef HAVE_STRUCT_SOCKADDR_UN
+     struct stat sb; /* buffer for lstat() */
+@@ -576,12 +578,19 @@
+             closesocket(fd);
+             return INVALID_SOCKET;
+         }
++        str_free(local_address);
+         if(listen(fd, SOMAXCONN)) {
+             sockerror("listen");
+-            str_free(local_address);
+             closesocket(fd);
+             return INVALID_SOCKET;
+         }
++        addr_real_len = sizeof addr_real;
++        if (getsockname(fd, &addr_real.sa, &addr_real_len)) {
++            sockerror("getsockname");
++            closesocket(fd);
++            return INVALID_SOCKET;
++        }
++        local_address=s_ntop(&addr_real, addr_len(&addr_real));
+     }
+ 
+ #ifdef HAVE_STRUCT_SOCKADDR_UN

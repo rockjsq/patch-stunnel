@@ -1,0 +1,60 @@
+diff -ruN a/src/ui_win_cli.c b/src/ui_win_cli.c
+--- a/src/ui_win_cli.c	2019-05-16 03:35:16.000000000 +0800
++++ b/src/ui_win_cli.c	2019-07-11 23:56:49.838182042 +0800
+@@ -54,14 +54,18 @@
+             *c=TEXT('\0'); /* truncate "bin" */
+     }
+ #ifndef _WIN32_WCE
+-    if(!SetCurrentDirectory(stunnel_exe_path)) {
+-        /* log to stderr, as s_log() is not initialized */
+-        _ftprintf(stderr, TEXT("Cannot set directory to %s"),
+-            stunnel_exe_path);
+-        return 1;
++    if (GetEnvironmentVariable(_T("STUNNEL_INHERITCWD"), NULL, 0) == 0) {
++        if(!SetCurrentDirectory(stunnel_exe_path)) {
++            /* log to stderr, as s_log() is not initialized */
++            _ftprintf(stderr, TEXT("Cannot set directory to %s"),
++                stunnel_exe_path);
++            return 1;
++        }
++        /* try to enter the "config" subdirectory, ignore the result */
++        SetCurrentDirectory(TEXT("config"));
++    } else {
++        _ftprintf(stderr, TEXT("Inherited working directory from parent process.\n"));
+     }
+-    /* try to enter the "config" subdirectory, ignore the result */
+-    SetCurrentDirectory(TEXT("config"));
+ #endif
+     _tputenv(str_tprintf(TEXT("OPENSSL_ENGINES=%s\\engines"),
+         stunnel_exe_path));
+diff -ruN a/src/ui_win_gui.c b/src/ui_win_gui.c
+--- a/src/ui_win_gui.c	2019-05-16 03:35:16.000000000 +0800
++++ b/src/ui_win_gui.c	2019-07-11 23:57:11.593036992 +0800
+@@ -191,15 +191,19 @@
+             *c=TEXT('\0'); /* truncate "bin" */
+     }
+ #ifndef _WIN32_WCE
+-    if(!SetCurrentDirectory(stunnel_exe_path)) {
+-        errmsg=str_tprintf(TEXT("Cannot set directory to %s"),
+-            stunnel_exe_path);
+-        message_box(errmsg, MB_ICONERROR);
+-        str_free(errmsg);
+-        return 1;
++    if (GetEnvironmentVariable(_T("STUNNEL_INHERITCWD"), NULL, 0) == 0) {
++        if(!SetCurrentDirectory(stunnel_exe_path)) {
++            errmsg=str_tprintf(TEXT("Cannot set directory to %s"),
++                stunnel_exe_path);
++            message_box(errmsg, MB_ICONERROR);
++            str_free(errmsg);
++            return 1;
++        }
++        /* try to enter the "config" subdirectory, ignore the result */
++        SetCurrentDirectory(TEXT("config"));
++    } else {
++        _ftprintf(stderr, TEXT("Inherited working directory from parent process.\n"));
+     }
+-    /* try to enter the "config" subdirectory, ignore the result */
+-    SetCurrentDirectory(TEXT("config"));
+ #endif
+     _tputenv(str_tprintf(TEXT("OPENSSL_ENGINES=%s\\engines"),
+         stunnel_exe_path));
